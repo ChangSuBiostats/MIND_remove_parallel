@@ -89,9 +89,9 @@ bMIND = function(bulk, frac = NULL, sample_id = NULL, ncore = NULL, profile = NU
 
 bmind = function(X, W, sample_id, ncore = 30, profile = NULL, covariance = NULL, nu = 50, nitt = 1300, burnin = 300, thin = 1, V_fe = NULL) {
   
-  cl = makeCluster(ncore)
-  registerDoParallel(cl)
-  getDoParWorkers()
+ # cl = makeCluster(ncore)
+ # registerDoParallel(cl)
+ # getDoParWorkers()
   
   K = ncol(W)
   
@@ -114,10 +114,15 @@ bmind = function(X, W, sample_id, ncore = 30, profile = NULL, covariance = NULL,
   if(any(colnames(W) != colnames(profile)) | any(colnames(profile) != colnames(covariance))) 
     print(('Warning: check cell type names of fraction and prior'))
   
-  mind_mc_ls = foreach(i = rownames(X), .errorhandling = 'pass') %dopar% {
-    return(lme_mc2(x = X[i,], W = W, sample_id, mu = profile[i,], V_fe = V_fe, V_re = covariance[i,,], nu = nu, nitt = nitt, burnin = burnin, 
+  # mind_mc_ls = foreach(i = rownames(X), .errorhandling = 'pass') %dopar% {
+  #   return(lme_mc2(x = X[i,], W = W, sample_id, mu = profile[i,], V_fe = V_fe, V_re = covariance[i,,], nu = nu, nitt = nitt, burnin = burnin, 
+  #                 thin = thin))
+  #}
+  mind_mc_ls <- lapply(rownames(X), function(i){
+			       return(lme_mc2(x = X[i,], W = W, sample_id, mu = profile[i,], V_fe = V_fe, V_re = covariance[i,,], nu = nu, nitt = nitt, burnin = burnin,
                    thin = thin))
-  }
+		 })
+  
   names(mind_mc_ls) = rownames(X)
   nerr_id = which(sapply(mind_mc_ls, length) != 2)
   err_id = which(sapply(mind_mc_ls, length) == 2)
@@ -138,7 +143,7 @@ bmind = function(X, W, sample_id, ncore = 30, profile = NULL, covariance = NULL,
     res$SE = res$SE[,,unique(sample_id)]
   }
   
-  stopCluster(cl)
+ # stopCluster(cl)
   return(res)
 }
 
